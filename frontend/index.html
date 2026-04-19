@@ -1,582 +1,318 @@
 <!DOCTYPE html>
-<html class="dark" lang="en">
+<html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>SENTINEL - Crime &amp; Threat Detection</title>
-<meta name="description" content="SENTINEL: AI-powered NLP crime and threat detection system for analyzing social media text and communication logs."/>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
-    tailwind.config = {
-        darkMode: "class",
-        theme: {
-            extend: {
-                "colors": {
-                    "surface-container": "#171f33",
-                    "tertiary-container": "#003220",
-                    "inverse-on-surface": "#283044",
-                    "primary-fixed": "#d8e3fb",
-                    "tertiary-fixed": "#6ffbbe",
-                    "background": "#0b1326",
-                    "on-secondary-fixed": "#0b1c30",
-                    "secondary-fixed": "#d3e4fe",
-                    "on-secondary": "#213145",
-                    "secondary-fixed-dim": "#b7c8e1",
-                    "on-error": "#690005",
-                    "tertiary-fixed-dim": "#4edea3",
-                    "surface-container-high": "#222a3d",
-                    "secondary": "#b7c8e1",
-                    "surface-bright": "#31394d",
-                    "primary": "#bcc7de",
-                    "on-primary-container": "#8893a9",
-                    "on-background": "#dae2fd",
-                    "on-secondary-fixed-variant": "#38485d",
-                    "on-error-container": "#ffdad6",
-                    "on-secondary-container": "#a9bad3",
-                    "surface-container-low": "#131b2e",
-                    "secondary-container": "#3a4a5f",
-                    "surface-dim": "#0b1326",
-                    "on-tertiary-fixed": "#002113",
-                    "on-tertiary-fixed-variant": "#005236",
-                    "surface-variant": "#2d3449",
-                    "primary-container": "#202b3e",
-                    "surface-tint": "#bcc7de",
-                    "tertiary": "#4edea3",
-                    "surface-container-highest": "#2d3449",
-                    "on-surface-variant": "#c5c6ce",
-                    "inverse-surface": "#dae2fd",
-                    "on-primary-fixed": "#111c2d",
-                    "on-primary": "#263143",
-                    "on-tertiary-container": "#00a673",
-                    "primary-fixed-dim": "#bcc7de",
-                    "error-container": "#93000a",
-                    "error": "#ffb4ab",
-                    "surface-container-lowest": "#060e20",
-                    "on-surface": "#dae2fd",
-                    "inverse-primary": "#545f73",
-                    "outline-variant": "#44474d",
-                    "outline": "#8f9098",
-                    "surface": "#0b1326",
-                    "on-primary-fixed-variant": "#3c475a",
-                    "on-tertiary": "#003824"
-                },
-                "borderRadius": {
-                    "DEFAULT": "0.125rem",
-                    "lg": "0.25rem",
-                    "xl": "0.5rem",
-                    "full": "0.75rem"
-                },
-                "fontFamily": {
-                    "headline": ["Manrope"],
-                    "body": ["Inter"],
-                    "label": ["Inter"]
-                }
-            },
-        },
-    }
-</script>
-<style>
-    .material-symbols-outlined {
-        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-    }
-    body {
-        font-family: 'Inter', sans-serif;
-        background-color: #0b1326;
-        min-height: max(884px, 100dvh);
-    }
-    .headline-font { font-family: 'Manrope', sans-serif; }
-
-    /* Pulse animation for model-loading banner */
-    @keyframes pulse-slow {
-        0%, 100% { opacity: 1; }
-        50%       { opacity: 0.5; }
-    }
-    .pulse-slow { animation: pulse-slow 2s ease-in-out infinite; }
-
-    /* Skeleton shimmer */
-    @keyframes shimmer {
-        0%   { background-position: -1000px 0; }
-        100% { background-position:  1000px 0; }
-    }
-    .skeleton {
-        background: linear-gradient(90deg, #171f33 25%, #222a3d 50%, #171f33 75%);
-        background-size: 1000px 100%;
-        animation: shimmer 1.6s infinite linear;
-        border-radius: 0.5rem;
-    }
-
-    /* Slide-in for result card */
-    @keyframes slide-in {
-        from { opacity: 0; transform: translateY(18px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
-    .slide-in { animation: slide-in 0.45s cubic-bezier(0.22,1,0.36,1) both; }
-
-    /* Confidence bar fill */
-    @keyframes bar-grow {
-        from { width: 0; }
-    }
-    .bar-grow { animation: bar-grow 0.8s cubic-bezier(0.22,1,0.36,1) both; }
-
-    /* Network node pulse dots */
-    @keyframes node-pulse {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(78,222,163,0.6); }
-        50%       { box-shadow: 0 0 0 8px rgba(78,222,163,0); }
-    }
-    .node-dot { animation: node-pulse 2s ease-in-out infinite; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CrimeShield — AI Crime & Threat Detection</title>
+  <meta name="description" content="Real-time AI-powered crime and threat detection from social media text using advanced NLP and BERT-based classification." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 </head>
+<body>
+  <!-- ===== ANIMATED BACKGROUND ===== -->
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-orb orb-1" aria-hidden="true"></div>
+  <div class="bg-orb orb-2" aria-hidden="true"></div>
+  <div class="bg-orb orb-3" aria-hidden="true"></div>
 
-<body class="bg-background text-on-surface flex flex-col">
-
-<!-- ═══════════════════════ TOP APP BAR ═══════════════════════ -->
-<header class="bg-[#0b1326]/80 backdrop-blur-lg sticky top-0 z-50 w-full h-20 flex justify-between items-center px-6 md:px-8 max-w-screen-2xl mx-auto">
-    <div class="flex items-center gap-3">
-        <span class="material-symbols-outlined text-slate-300 text-2xl" style="font-variation-settings:'FILL' 1;">shield_lock</span>
-        <h1 class="text-xl font-black text-slate-100 tracking-tighter uppercase headline-font">SENTINEL</h1>
-        <span id="model-badge" class="hidden ml-3 text-[10px] font-bold uppercase tracking-widest text-tertiary bg-tertiary/10 px-2.5 py-1 rounded-full headline-font"></span>
-    </div>
-    <div class="flex items-center gap-4">
-        <!-- Status indicator -->
-        <div id="status-dot" class="flex items-center gap-2">
-            <div class="w-2 h-2 rounded-full bg-outline pulse-slow"></div>
-            <span class="text-xs text-outline hidden sm:block">Initializing</span>
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+            <path d="M16 2L4 8v8c0 7.18 5.14 13.9 12 15.93C22.86 29.9 28 23.18 28 16V8L16 2z" fill="url(#shield-grad)"/>
+            <path d="M11 16l3 3 7-7" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <defs>
+              <linearGradient id="shield-grad" x1="4" y1="2" x2="28" y2="32" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#6c63ff"/>
+                <stop offset="100%" stop-color="#ff4757"/>
+              </linearGradient>
+            </defs>
+          </svg>
         </div>
-        <button class="p-2 hover:bg-slate-800/50 rounded-lg transition-all duration-300 active:scale-95">
-            <span class="material-symbols-outlined text-slate-300">account_circle</span>
-        </button>
+        <span class="logo-text">Crime<span class="logo-accent">Shield</span></span>
+      </div>
+      <nav class="nav" aria-label="Main navigation">
+        <a href="#analyzer" class="nav-link active" id="nav-analyzer">Analyzer</a>
+        <a href="#batch" class="nav-link" id="nav-batch">Batch</a>
+        <a href="#about" class="nav-link" id="nav-about">About</a>
+      </nav>
+      <div class="status-pill" id="status-pill">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-label">Connecting…</span>
+      </div>
     </div>
-</header>
+  </header>
 
-<!-- ═══════════════════════ LOADING BANNER ═══════════════════════ -->
-<div id="loading-banner" class="w-full bg-primary-container/60 backdrop-blur-md border-b border-primary/10 py-3 px-6 flex items-center justify-center gap-3">
-    <span class="material-symbols-outlined text-primary text-sm pulse-slow">smart_toy</span>
-    <p class="text-xs text-primary font-medium headline-font tracking-wide">
-        Intelligence model initializing — training on dataset. This takes 30–90 seconds…
-    </p>
-</div>
+  <!-- ===== MAIN ===== -->
+  <main class="main">
 
-<!-- ═══════════════════════ MAIN CONTENT ═══════════════════════ -->
-<main class="flex-grow w-full max-w-3xl mx-auto px-6 py-10 flex flex-col gap-12">
-
-    <!-- ── Input Section ─────────────────────────────────────────── -->
-    <section class="flex flex-col gap-6">
-        <div class="space-y-2">
-            <h2 class="headline-font text-3xl font-extrabold tracking-tight text-on-surface">Digital Intelligence Brief</h2>
-            <p class="text-on-surface-variant font-light leading-relaxed">Initiate deep-layer analysis on suspect reports or communication logs.</p>
+    <!-- ===== HERO ===== -->
+    <section class="hero" aria-labelledby="hero-heading">
+      <div class="hero-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#6c63ff"><circle cx="12" cy="12" r="10"/></svg>
+        AI-Powered NLP Analysis
+      </div>
+      <h1 class="hero-title" id="hero-heading">
+        Detect Crime &amp; Threats<br/>
+        <span class="gradient-text">in Social Media Text</span>
+      </h1>
+      <p class="hero-subtitle">
+        Multi-label classification using TF-IDF and logistic regression trained on the Jigsaw Toxic Comment dataset.
+        Identifies toxic, threatening, obscene, and identity-hate content in real time.
+      </p>
+      <div class="hero-stats" id="hero-stats">
+        <div class="hero-stat">
+          <span class="hero-stat-value">6</span>
+          <span class="hero-stat-label">Threat Categories</span>
         </div>
+        <div class="hero-stat">
+          <span class="hero-stat-value" id="stat-samples">–</span>
+          <span class="hero-stat-label">Training Samples</span>
+        </div>
+      </div>
+    </section>
 
-        <div class="relative group">
+    <!-- ===== ANALYZER SECTION ===== -->
+    <section class="section" id="analyzer" aria-labelledby="analyzer-heading">
+      <div class="section-header">
+        <h2 class="section-title" id="analyzer-heading">Text Analyzer</h2>
+        <p class="section-subtitle">Enter any text to analyze it for potential crime or threat indicators</p>
+      </div>
+
+      <div class="analyzer-grid">
+
+        <!-- Input Card -->
+        <div class="card input-card">
+          <div class="card-header">
+            <h3 class="card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Input Text
+            </h3>
+            <span class="char-count" id="char-count">0 / 10,000</span>
+          </div>
+          <div class="textarea-wrapper">
             <textarea
-                id="input-text"
-                class="w-full h-48 p-6 bg-surface-container-highest border-none focus:ring-0 focus:outline-none text-on-surface placeholder:text-outline/50 rounded-xl transition-all font-body text-lg resize-none"
-                placeholder="Enter text or paste a report for analysis…"
+              id="input-text"
+              class="input-textarea"
+              placeholder="Paste or type social media text here…&#10;&#10;Example: 'I will find you and make you pay for what you did!'"
+              maxlength="10000"
+              rows="10"
+              aria-label="Text to analyze"
+              aria-describedby="char-count"
             ></textarea>
-            <div class="absolute bottom-0 left-0 w-full h-[2px] bg-surface-container-highest rounded-b-xl">
-                <div class="h-full bg-primary w-0 group-focus-within:w-full transition-all duration-500 rounded-b-xl"></div>
+          </div>
+          <div class="card-footer">
+            <div class="quick-examples">
+              <span class="examples-label">Try example:</span>
+              <button class="example-btn" id="ex-threat" data-text="I know where you live and I will come for you tonight. You will regret everything you did to me.">Threat</button>
+              <button class="example-btn" id="ex-toxic" data-text="You are the most stupid and worthless person I've ever had the misfortune to meet.">Toxic</button>
+              <button class="example-btn" id="ex-clean" data-text="The weather today is beautiful! Looking forward to the community picnic this weekend.">Clean</button>
             </div>
+            <div class="action-row">
+              <button class="btn-secondary" id="clear-btn" aria-label="Clear text input">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                Clear
+              </button>
+              <button class="btn-primary" id="analyze-btn" aria-label="Analyze text for threats">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <span id="analyze-btn-text">Analyze Text</span>
+              </button>
+            </div>
+          </div>
         </div>
 
-        <!-- Error message -->
-        <p id="input-error" class="hidden text-sm text-error flex items-center gap-1.5">
-            <span class="material-symbols-outlined text-base">error</span>
-            <span id="input-error-text">Please enter text to analyze.</span>
-        </p>
+        <!-- Results Card -->
+        <div class="card results-card" id="results-card">
+          <!-- Idle state -->
+          <div class="results-idle" id="results-idle">
+            <div class="idle-icon" aria-hidden="true">
+              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </div>
+            <p class="idle-title">Analysis Results</p>
+            <p class="idle-message">Enter text on the left and click Analyze to see the threat assessment.</p>
+          </div>
 
-        <button
-            id="analyze-btn"
-            onclick="analyzeText()"
-            class="w-full py-4 px-8 rounded-full bg-gradient-to-br from-primary to-primary-container text-on-primary font-headline font-bold text-lg tracking-wide shadow-lg active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:from-primary-fixed hover:to-primary-container"
-        >
-            <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">analytics</span>
-            <span id="btn-label">ANALYZE REPORT</span>
-        </button>
+          <!-- Loading state -->
+          <div class="results-loading hidden" id="results-loading" aria-live="polite" aria-label="Analyzing text…">
+            <div class="spinner" aria-hidden="true"></div>
+            <p class="loading-text">Analyzing text…</p>
+          </div>
+
+          <!-- Results state -->
+          <div class="results-content hidden" id="results-content">
+            <!-- Verdict banner -->
+            <div class="verdict-banner" id="verdict-banner" role="alert">
+              <div class="verdict-icon" id="verdict-icon" aria-hidden="true"></div>
+              <div class="verdict-text">
+                <div class="verdict-title" id="verdict-title"></div>
+                <div class="verdict-subtitle" id="verdict-summary"></div>
+              </div>
+              <div class="verdict-confidence" id="verdict-confidence">
+                <span class="confidence-value" id="confidence-value"></span>
+                <span class="confidence-label">Risk Score</span>
+              </div>
+            </div>
+
+            <!-- Category breakdown -->
+            <div class="categories-grid" id="categories-grid"></div>
+
+            <!-- Processing time -->
+            <div class="meta-row">
+              <span class="meta-tag" id="meta-time"></span>
+              <span class="meta-tag" id="meta-flagged"></span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /analyzer-grid -->
     </section>
 
-    <!-- ── Results Section ───────────────────────────────────────── -->
-    <section id="results-section" class="flex flex-col gap-8">
+    <!-- ===== BATCH SECTION ===== -->
+    <section class="section" id="batch" aria-labelledby="batch-heading">
+      <div class="section-header">
+        <h2 class="section-title" id="batch-heading">Batch Analyzer</h2>
+        <p class="section-subtitle">Analyze multiple texts at once — one per line (max 50)</p>
+      </div>
 
-        <!-- Skeleton (shown while loading) -->
-        <div id="skeleton-loader" class="hidden flex flex-col gap-6">
-            <div class="flex items-center justify-between border-b border-outline-variant/10 pb-4">
-                <div class="skeleton h-3 w-32 rounded"></div>
-                <div class="skeleton h-3 w-20 rounded"></div>
-            </div>
-            <div class="skeleton h-44 w-full rounded-xl"></div>
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            Batch Input
+          </h3>
+          <span class="char-count" id="batch-line-count">0 lines</span>
         </div>
-
-        <!-- Results header (shown after first result) -->
-        <div id="results-header" class="hidden flex items-center justify-between border-b border-outline-variant/10 pb-4">
-            <h3 class="headline-font text-sm font-bold uppercase tracking-widest text-on-secondary-container">Analysis Findings</h3>
-            <span id="result-meta" class="text-xs text-outline font-medium"></span>
+        <textarea
+          id="batch-text"
+          class="input-textarea"
+          placeholder="Enter one text per line:&#10;I will hurt you badly!&#10;Have a great day everyone!&#10;You better watch your back..."
+          rows="8"
+          aria-label="Batch text input"
+        ></textarea>
+        <div class="card-footer">
+          <button class="btn-primary" id="batch-btn" aria-label="Run batch analysis">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span id="batch-btn-text">Run Batch Analysis</span>
+          </button>
         </div>
+      </div>
 
-        <!-- Dynamic result card injected here -->
-        <div id="result-cards" class="space-y-6"></div>
-
-        <!-- Empty / placeholder state -->
-        <div id="empty-state" class="flex flex-col items-center gap-4 py-12 text-center">
-            <div class="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center">
-                <span class="material-symbols-outlined text-outline text-3xl">radar</span>
-            </div>
-            <p class="text-on-surface-variant text-sm font-light max-w-xs leading-relaxed">
-                Enter a text sample above and click <strong class="text-primary font-medium">Analyze Report</strong> to begin intelligence analysis.
-            </p>
-        </div>
+      <!-- Batch results -->
+      <div class="batch-results hidden" id="batch-results"></div>
     </section>
 
-    <!-- ── Visual Context Card ───────────────────────────────────── -->
-    <section class="w-full">
-        <div class="relative h-64 w-full rounded-2xl overflow-hidden bg-surface-container shadow-2xl">
-            <img
-                alt="Global security node map"
-                class="w-full h-full object-cover opacity-40 mix-blend-screen"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2sN4UnEmaTaCItLFEvN91Q8s_NNFxX68yiNqoX3y4QCJMslnog2xCoQO0sVq7i2bzIxrPfezCFcmy-A_zo18cMOFAelLLopPSR_iiw9t2Bn2W_R7eNJeC4P3CNzFcZIR4R8mS7GIKRk-B8mrR990Lwyk-fi0whyMFGl12mgxY62sKiPdi_VfgaIY8Cp00CKIUl2eju5pNWEDSRhYcbjIvt5tWiBaemVWemKWBjU2FA-GdKjMGfDYSvVrxamEJC-qkjuGKj15V-A4"
-            />
-            <div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
-            <div class="absolute bottom-6 left-6">
-                <h5 class="headline-font text-xl font-bold text-slate-100">Regional Sentinel Feed</h5>
-                <p class="text-sm text-slate-400 flex items-center gap-2 mt-1">
-                    <span class="w-2 h-2 rounded-full bg-tertiary node-dot inline-block"></span>
-                    Live monitoring active across 14 nodes.
-                </p>
-            </div>
+    <!-- ===== HISTORY SECTION ===== -->
+    <section class="section" id="history-section" aria-labelledby="history-heading">
+      <div class="section-header">
+        <h2 class="section-title" id="history-heading">Analysis History</h2>
+        <button class="btn-ghost" id="clear-history-btn" aria-label="Clear history">Clear All</button>
+      </div>
+      <div class="history-list" id="history-list">
+        <div class="empty-state">
+          <p>No analyses yet. Start by analyzing some text above.</p>
         </div>
+      </div>
     </section>
-</main>
 
-<!-- ═══════════════════════ FOOTER ═══════════════════════ -->
-<footer class="w-full py-12 px-8 flex flex-col md:flex-row justify-between items-center gap-6 border-t border-white/5 bg-[#0b1326]">
-    <div class="flex flex-col gap-2 items-center md:items-start text-center md:text-left">
-        <p class="font-['Inter'] text-[10px] font-light uppercase tracking-[0.2em] text-slate-500">
-            © 2024 Sentinel Intelligence Systems. Authorized personnel only.
-        </p>
-        <p class="font-['Inter'] text-[10px] font-light uppercase tracking-[0.2em] text-error/60">
-            Classification: Level 5 TOP SECRET
-        </p>
+    <!-- ===== ABOUT SECTION ===== -->
+    <section class="section" id="about" aria-labelledby="about-heading">
+      <div class="section-header">
+        <h2 class="section-title" id="about-heading">About This System</h2>
+      </div>
+      <div class="about-grid">
+        <div class="card about-card">
+          <div class="about-icon about-icon-purple" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          </div>
+          <h3 class="about-card-title">ML Model</h3>
+          <p class="about-card-text">TF-IDF vectorization with multi-label Logistic Regression trained on the Jigsaw Toxic Comment Classification dataset. Detects 6 distinct threat categories simultaneously.</p>
+        </div>
+        <div class="card about-card">
+          <div class="about-icon about-icon-red" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3 class="about-card-title">6 Threat Categories</h3>
+          <p class="about-card-text">Toxic, Severely Toxic, Obscene, Direct Threats, Personal Insults, and Identity-based Hate. Each category is scored independently with a confidence percentage.</p>
+        </div>
+        <div class="card about-card">
+          <div class="about-icon about-icon-blue" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <h3 class="about-card-title">Real-Time API</h3>
+          <p class="about-card-text">Flask REST API with CORS support. Endpoints for single-text analysis, batch processing (up to 50 texts), health monitoring, and model statistics.</p>
+        </div>
+        <div class="card about-card">
+          <div class="about-icon about-icon-green" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <h3 class="about-card-title">BERT-Ready</h3>
+          <p class="about-card-text">The system includes <code>crime_detection.py</code> for full BERT fine-tuning. Once trained, BERT weights can replace the lightweight model for state-of-the-art accuracy.</p>
+        </div>
+      </div>
+
+      <!-- API Reference -->
+      <div class="card api-card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            API Reference
+          </h3>
+        </div>
+        <div class="api-endpoints">
+          <div class="api-endpoint">
+            <span class="method-badge method-get">GET</span>
+            <code class="endpoint-path">/api/health</code>
+            <span class="endpoint-desc">Service health check</span>
+          </div>
+          <div class="api-endpoint">
+            <span class="method-badge method-get">GET</span>
+            <code class="endpoint-path">/api/stats</code>
+            <span class="endpoint-desc">Model statistics and label definitions</span>
+          </div>
+          <div class="api-endpoint">
+            <span class="method-badge method-post">POST</span>
+            <code class="endpoint-path">/api/analyze</code>
+            <span class="endpoint-desc">Analyze a single text → <code>{"text": "..."}</code></span>
+          </div>
+          <div class="api-endpoint">
+            <span class="method-badge method-post">POST</span>
+            <code class="endpoint-path">/api/batch</code>
+            <span class="endpoint-desc">Batch analyze up to 50 texts → <code>{"texts": [...]}</code></span>
+          </div>
+        </div>
+        <div class="code-block-wrapper">
+          <div class="code-block-header">
+            <span>Example Request</span>
+            <button class="copy-btn" id="copy-example-btn" aria-label="Copy example code">Copy</button>
+          </div>
+          <pre class="code-block"><code id="example-code">curl -X POST http://localhost:5000/api/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"text": "I will make you pay for this!"}'</code></pre>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-logo">
+        <span class="logo-text">Crime<span class="logo-accent">Shield</span></span>
+      </div>
+      <p class="footer-text">
+        Crime &amp; Threat Detection from Social Media Text &mdash; NLP Research Project
+      </p>
+      <p class="footer-sub">
+        Powered by Flask · scikit-learn · BERT (HuggingFace) · Jigsaw Dataset
+      </p>
     </div>
-    <nav class="flex gap-8">
-        <a class="font-['Inter'] text-xs font-light uppercase tracking-widest text-slate-500 hover:text-slate-300 transition-colors" href="#">Secure Protocol</a>
-        <a class="font-['Inter'] text-xs font-light uppercase tracking-widest text-slate-500 hover:text-slate-300 transition-colors" href="#">Terms of Engagement</a>
-        <a class="font-['Inter'] text-xs font-light uppercase tracking-widest text-slate-500 hover:text-slate-300 transition-colors" href="#">Support Node</a>
-    </nav>
-</footer>
+  </footer>
 
-<!-- ═══════════════════════ MOBILE FAB ═══════════════════════ -->
-<div class="fixed bottom-6 right-6 z-40 md:hidden">
-    <button onclick="analyzeText()" class="h-14 w-14 rounded-full bg-primary-container text-primary flex items-center justify-center shadow-2xl border border-primary/20 backdrop-blur-md active:scale-90 transition-transform">
-        <span class="material-symbols-outlined">analytics</span>
-    </button>
-</div>
-
-<!-- ═══════════════════════ JAVASCRIPT ═══════════════════════ -->
-<script>
-    // ── Config ────────────────────────────────────────────────────────────────
-    const API_BASE = "http://localhost:5000";
-    const POLL_INTERVAL_MS = 3000;
-
-    // ── State ─────────────────────────────────────────────────────────────────
-    let modelReady  = false;
-    let pollTimer   = null;
-
-    // ── DOM refs ──────────────────────────────────────────────────────────────
-    const loadingBanner   = document.getElementById("loading-banner");
-    const statusDot       = document.getElementById("status-dot");
-    const modelBadge      = document.getElementById("model-badge");
-    const analyzeBtn      = document.getElementById("analyze-btn");
-    const btnLabel        = document.getElementById("btn-label");
-    const inputText       = document.getElementById("input-text");
-    const inputError      = document.getElementById("input-error");
-    const inputErrorText  = document.getElementById("input-error-text");
-    const skeletonLoader  = document.getElementById("skeleton-loader");
-    const resultsHeader   = document.getElementById("results-header");
-    const resultMeta      = document.getElementById("result-meta");
-    const resultCards     = document.getElementById("result-cards");
-    const emptyState      = document.getElementById("empty-state");
-
-    // ── Status polling ────────────────────────────────────────────────────────
-    async function pollStatus() {
-        try {
-            const res  = await fetch(`${API_BASE}/api/status`, { signal: AbortSignal.timeout(4000) });
-            const data = await res.json();
-
-            if (data.ready) {
-                setModelReady(data.model, data.accuracy);
-            } else if (data.error) {
-                setModelError(data.error);
-            }
-            // else: still training — keep polling
-        } catch (err) {
-            // Server not up yet — keep polling silently
-            setStatusDot("waiting");
-        }
-    }
-
-    function startPolling() {
-        pollStatus();
-        pollTimer = setInterval(pollStatus, POLL_INTERVAL_MS);
-    }
-
-    function stopPolling() {
-        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-    }
-
-    function setModelReady(modelName, accuracy) {
-        stopPolling();
-        modelReady = true;
-
-        // Hide banner
-        loadingBanner.style.transition = "opacity 0.5s";
-        loadingBanner.style.opacity = "0";
-        setTimeout(() => loadingBanner.classList.add("hidden"), 500);
-
-        // Update status dot → green
-        setStatusDot("ready");
-
-        // Show model badge in header
-        modelBadge.textContent = modelName || "AI Model";
-        modelBadge.classList.remove("hidden");
-
-        // Enable button
-        analyzeBtn.disabled = false;
-    }
-
-    function setModelError(errMsg) {
-        stopPolling();
-        setStatusDot("error");
-        loadingBanner.innerHTML = `
-            <span class="material-symbols-outlined text-error text-sm">error</span>
-            <p class="text-xs text-error font-medium headline-font tracking-wide">
-                Model failed to initialize: ${escapeHtml(errMsg)}
-            </p>
-        `;
-        loadingBanner.classList.remove("bg-primary-container/60");
-        loadingBanner.classList.add("bg-error-container/60");
-    }
-
-    function setStatusDot(state) {
-        const dotContainer = statusDot;
-        const dot   = dotContainer.querySelector("div");
-        const label = dotContainer.querySelector("span");
-
-        dot.classList.remove("pulse-slow");
-
-        const states = {
-            waiting: { color: "bg-outline",   text: "Connecting",   pulse: true  },
-            ready:   { color: "bg-tertiary",   text: "Online",       pulse: false },
-            busy:    { color: "bg-primary",    text: "Analyzing",    pulse: true  },
-            error:   { color: "bg-error",      text: "Error",        pulse: false },
-        };
-        const s = states[state] || states.waiting;
-
-        dot.className = `w-2 h-2 rounded-full ${s.color}`;
-        label.textContent = s.text;
-        if (s.pulse) dot.classList.add("pulse-slow");
-    }
-
-    // ── Analysis ──────────────────────────────────────────────────────────────
-    async function analyzeText() {
-        const text = inputText.value.trim();
-
-        // Validation
-        hideError();
-        if (!text) {
-            showError("Please enter some text to analyze.");
-            return;
-        }
-        if (!modelReady) {
-            showError("The intelligence model is still initializing. Please wait.");
-            return;
-        }
-
-        // UI: loading state
-        setStatusDot("busy");
-        analyzeBtn.disabled = true;
-        btnLabel.textContent = "ANALYZING…";
-        emptyState.classList.add("hidden");
-        resultsHeader.classList.add("hidden");
-        resultCards.innerHTML = "";
-        skeletonLoader.classList.remove("hidden");
-
-        try {
-            const res  = await fetch(`${API_BASE}/api/analyze`, {
-                method:  "POST",
-                headers: { "Content-Type": "application/json" },
-                body:    JSON.stringify({ text }),
-                signal:  AbortSignal.timeout(30000),
-            });
-
-            const data = await res.json();
-
-            if (!res.ok || data.error) {
-                throw new Error(data.error || `Server error ${res.status}`);
-            }
-
-            renderResult(data);
-        } catch (err) {
-            skeletonLoader.classList.add("hidden");
-            emptyState.classList.remove("hidden");
-            showError(
-                err.name === "TimeoutError"
-                    ? "Request timed out. Is the Flask server running on port 5000?"
-                    : `Analysis error: ${err.message}`
-            );
-        } finally {
-            analyzeBtn.disabled = false;
-            btnLabel.textContent = "ANALYZE REPORT";
-            setStatusDot("ready");
-        }
-    }
-
-    // ── Render result card ────────────────────────────────────────────────────
-    function renderResult(data) {
-        skeletonLoader.classList.add("hidden");
-
-        // Header
-        resultsHeader.classList.remove("hidden");
-        const ts = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-        resultMeta.textContent = `${data.model_used || "AI Model"} · ${ts}`;
-
-        // Category → colors & icon
-        const categoryMap = {
-            threat: {
-                bg:        "bg-error-container",
-                border:    "border-error",
-                titleColor:"text-on-error-container",
-                textColor: "text-on-error-container/80",
-                badgeBg:   "bg-error/20",
-                badgeText: "text-on-error-container",
-                icon:      "warning",
-                iconStyle: "font-variation-settings:'FILL' 1;",
-            },
-            abuse: {
-                bg:        "bg-tertiary-container",
-                border:    "border-tertiary",
-                titleColor:"text-on-tertiary-container",
-                textColor: "text-on-tertiary-container/80",
-                badgeBg:   "bg-tertiary/20",
-                badgeText: "text-on-tertiary-container",
-                icon:      "error_outline",
-                iconStyle: "",
-            },
-            safe: {
-                bg:        "bg-secondary-container",
-                border:    "border-secondary",
-                titleColor:"text-on-secondary-container",
-                textColor: "text-on-secondary-container/80",
-                badgeBg:   "bg-secondary/20",
-                badgeText: "text-on-secondary-container",
-                icon:      "check_circle",
-                iconStyle: "font-variation-settings:'FILL' 1;",
-            },
-        };
-
-        const cat   = categoryMap[data.category] || categoryMap.safe;
-        const conf  = data.confidence != null ? `${data.confidence}%` : "—";
-        const label = escapeHtml(data.label || "Unknown");
-        const title = escapeHtml(data.display_title || "Analysis Result");
-        const risk  = escapeHtml(data.risk_level || "Unknown");
-
-        // Confidence bar color
-        const barColor = data.category === "threat" ? "bg-error"
-                       : data.category === "abuse"  ? "bg-tertiary"
-                       : "bg-secondary";
-
-        const confVal = data.confidence != null ? data.confidence : 0;
-
-        resultCards.innerHTML = `
-            <div class="slide-in p-6 rounded-xl ${cat.bg} border-l-4 ${cat.border} flex flex-col gap-4 relative overflow-hidden">
-
-                <!-- Header row -->
-                <div class="flex justify-between items-start gap-2">
-                    <div class="flex items-center gap-2">
-                        <span class="material-symbols-outlined ${cat.titleColor}" style="${cat.iconStyle}">${cat.icon}</span>
-                        <span class="text-xs font-bold headline-font uppercase tracking-tighter ${cat.titleColor}">${risk} Risk</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="px-2.5 py-1 ${cat.badgeBg} rounded-md">
-                            <span class="text-[10px] font-bold ${cat.badgeText} headline-font uppercase">${risk}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Title -->
-                <h4 class="${cat.titleColor} text-xl font-bold headline-font">${title}</h4>
-
-                <!-- Raw label -->
-                <p class="${cat.textColor} text-sm leading-relaxed">
-                    Classification label: <span class="font-mono font-semibold ${cat.titleColor}">${label}</span>
-                </p>
-
-                <!-- Confidence bar -->
-                ${data.confidence != null ? `
-                <div class="flex flex-col gap-1.5">
-                    <div class="flex justify-between items-center">
-                        <span class="text-[10px] font-bold uppercase tracking-widest ${cat.textColor} headline-font">Confidence</span>
-                        <span class="text-xs font-bold ${cat.titleColor} headline-font">${conf}</span>
-                    </div>
-                    <div class="w-full h-1.5 rounded-full bg-black/20">
-                        <div class="bar-grow h-full rounded-full ${barColor}" style="width:${confVal}%"></div>
-                    </div>
-                </div>
-                ` : ""}
-
-                <!-- Chips row -->
-                <div class="flex flex-wrap gap-2 mt-1">
-                    <span class="${cat.badgeBg} px-3 py-1 rounded-full text-[10px] font-bold ${cat.badgeText} headline-font uppercase">
-                        ${escapeHtml(data.model_used || "AI")}
-                    </span>
-                    <span class="${cat.badgeBg} px-3 py-1 rounded-full text-[10px] font-bold ${cat.badgeText} headline-font uppercase">
-                        NLP ANALYSIS
-                    </span>
-                    <span class="${cat.badgeBg} px-3 py-1 rounded-full text-[10px] font-bold ${cat.badgeText} headline-font uppercase">
-                        ${new Date().toLocaleDateString()}
-                    </span>
-                </div>
-
-                <!-- Subtle glow overlay -->
-                <div class="pointer-events-none absolute inset-0 rounded-xl opacity-5"
-                     style="background: radial-gradient(ellipse at top left, white, transparent 70%)"></div>
-            </div>
-
-            <!-- Preprocessed excerpt -->
-            <div class="p-4 rounded-xl bg-surface-container-high flex flex-col gap-2">
-                <span class="text-[10px] font-bold uppercase tracking-widest text-outline headline-font">Preprocessed Input</span>
-                <p class="text-on-surface-variant text-sm font-mono leading-relaxed break-all">${escapeHtml(data.preprocessed_text || "")}</p>
-            </div>
-        `;
-    }
-
-    // ── Utilities ─────────────────────────────────────────────────────────────
-    function showError(msg) {
-        inputErrorText.textContent = msg;
-        inputError.classList.remove("hidden");
-    }
-    function hideError() {
-        inputError.classList.add("hidden");
-    }
-    function escapeHtml(str) {
-        return String(str)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#39;");
-    }
-
-    // ── Allow Enter key to submit (Shift+Enter for newline) ───────────────────
-    inputText.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            analyzeText();
-        }
-    });
-
-    // ── Boot ──────────────────────────────────────────────────────────────────
-    analyzeBtn.disabled = true; // disabled until model is ready
-    startPolling();
-</script>
+  <script src="app.js"></script>
 </body>
 </html>

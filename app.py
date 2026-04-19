@@ -1,294 +1,159 @@
 """
-SENTINEL Flask API
-Wraps the NLP crime detection pipeline and exposes REST endpoints
-for the frontend to consume.
+app.py — Flask REST API for Crime & Threat Detection
 """
-
 import os
-import threading
 import time
-import pickle
+import logging
+from datetime import datetime
 
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 
-# ── Import ML pipeline functions ──────────────────────────────────────────────
-from crime_detection import (
-    load_data,
-    preprocess_dataframe,
-    preprocess_text,
-    get_models,
-)
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-from sklearn.preprocessing import LabelEncoder
+from model_utils import load_model, predict, get_model_stats, LABELS
 
-# ─────────────────────────────────────────────────────────────────────────────
-app = Flask(__name__, static_folder="frontend", static_url_path="/frontend")
-CORS(app)  # Allow requests from file:// and localhost frontends
+# ---------------------------------------------------------------------------
+# App setup
+# ---------------------------------------------------------------------------
+FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "frontend")
+app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path="")
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-FRONTEND_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "frontend")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logger = logging.getLogger(__name__)
 
-# ── Shared model state ────────────────────────────────────────────────────────
-MODEL_STATE = {
-    "ready": False,
-    "error": None,
-    "model": None,
-    "label_encoder": None,
-    "best_name": None,
-    "best_acc": None,
-    "text_col": None,
-    "classes": [],
-}
+# Pre-load model at startup
+logger.info("Pre-loading model…")
+load_model()
+logger.info("Model ready.")
 
-MODEL_PATH = "trained_model.pkl"
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Label → UI metadata mapping
-# ─────────────────────────────────────────────────────────────────────────────
-
-def label_to_ui(label_str: str):
-    """
-    Map a raw label string to a risk level and UI category.
-    Adapt the keyword lists below to match your dataset's actual class names.
-    """
-    lbl = str(label_str).lower()
-
-    threat_keywords  = ["threat", "violence", "violent", "extremis", "weapon",
-                        "kill", "bomb", "terror", "harm", "attack", "murder"]
-    abuse_keywords   = ["abuse", "abusive", "harass", "hate", "offensive",
-                        "toxic", "vulgar", "insult", "bully"]
-    safe_keywords    = ["safe", "neutral", "normal", "clean", "benign",
-                        "not", "no", "0", "false", "negative"]
-
-    if any(k in lbl for k in threat_keywords):
-        return "Critical Threat", "High", "threat"
-    elif any(k in lbl for k in abuse_keywords):
-        return "Abuse Signal", "Medium", "abuse"
-    elif any(k in lbl for k in safe_keywords):
-        return "Safe Content", "Low", "safe"
-    else:
-        # Fallback: numeric labels — 0 = safe, anything > 0 = escalating risk
-        try:
-            val = int(float(lbl))
-            if val == 0:
-                return "Safe Content", "Low", "safe"
-            elif val == 1:
-                return "Suspicious Activity", "Medium", "abuse"
-            else:
-                return "Critical Threat", "High", "threat"
-        except ValueError:
-            return lbl.title(), "Unknown", "safe"
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Background model training
-# ─────────────────────────────────────────────────────────────────────────────
-
-def train_model():
-    """Load data, train models, pick the best, store in MODEL_STATE."""
-    global MODEL_STATE
-    try:
-        print("[SENTINEL] Loading data…")
-        train_df, _ = load_data()
-
-        # Auto-detect columns
-        cols      = train_df.columns.tolist()
-        label_col = cols[-1]
-        text_keys = ("tweet", "text", "message", "post", "content", "comment")
-        text_col  = next((c for c in cols if c.lower() in text_keys), cols[1])
-
-        MODEL_STATE["text_col"] = text_col
-        print(f"[SENTINEL] Using text_col='{text_col}'  label_col='{label_col}'")
-
-        # Preprocess
-        train_df = preprocess_dataframe(train_df, text_col)
-
-        # Encode labels
-        le = LabelEncoder()
-        y  = le.fit_transform(train_df[label_col])
-        MODEL_STATE["classes"] = le.classes_.tolist()
-        print(f"[SENTINEL] Classes: {le.classes_}")
-
-        # Split
-        X_train, X_val, y_train, y_val = train_test_split(
-            train_df[text_col], y,
-            test_size=0.2, random_state=42, stratify=y,
-        )
-
-        # Train all models, pick best
-        best_model = None
-        best_acc   = 0.0
-        best_name  = ""
-
-        for name, pipeline in get_models().items():
-            print(f"[SENTINEL] Training {name}…")
-            pipeline.fit(X_train, y_train)
-            preds = pipeline.predict(X_val)
-            acc   = accuracy_score(y_val, preds)
-            print(f"[SENTINEL]   {name}: val_acc = {acc:.4f}")
-            if acc > best_acc:
-                best_acc   = acc
-                best_model = pipeline
-                best_name  = name
-
-        print(f"[SENTINEL] Best model: {best_name} (acc={best_acc:.4f})")
-        print(f"[SENTINEL] Retraining '{best_name}' on full training data…")
-        best_model.fit(train_df[text_col], y)
-
-        # Persist to disk for fast future restarts
-        with open(MODEL_PATH, "wb") as f:
-            pickle.dump({
-                "model": best_model,
-                "le": le,
-                "best_name": best_name,
-                "best_acc": best_acc,
-                "text_col": text_col,
-            }, f)
-        print(f"[SENTINEL] Model saved to {MODEL_PATH}")
-
-        MODEL_STATE.update({
-            "ready": True,
-            "model": best_model,
-            "label_encoder": le,
-            "best_name": best_name,
-            "best_acc": float(best_acc),
-        })
-
-    except Exception as exc:
-        import traceback
-        traceback.print_exc()
-        MODEL_STATE["error"] = str(exc)
-
-
-def load_or_train():
-    """Load a pre-trained model if available, otherwise train from scratch."""
-    if os.path.exists(MODEL_PATH):
-        try:
-            print(f"[SENTINEL] Loading cached model from {MODEL_PATH}…")
-            with open(MODEL_PATH, "rb") as f:
-                saved = pickle.load(f)
-            MODEL_STATE.update({
-                "ready": True,
-                "model": saved["model"],
-                "label_encoder": saved["le"],
-                "best_name": saved["best_name"],
-                "best_acc": float(saved["best_acc"]),
-                "text_col": saved["text_col"],
-                "classes": saved["le"].classes_.tolist(),
-            })
-            print(f"[SENTINEL] Model loaded: {saved['best_name']} (acc={saved['best_acc']:.4f})")
-            return
-        except Exception as exc:
-            print(f"[SENTINEL] Cache load failed ({exc}), retraining…")
-
-    train_model()
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Frontend Route
-# ─────────────────────────────────────────────────────────────────────────────
-
-@app.route("/", methods=["GET"])
-def index():
-    """Serve the SENTINEL frontend."""
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def serve_frontend(path):
+    """Serve the frontend SPA."""
+    if path and os.path.exists(os.path.join(FRONTEND_DIR, path)):
+        return send_from_directory(FRONTEND_DIR, path)
     return send_from_directory(FRONTEND_DIR, "index.html")
 
 
-@app.route("/frontend/<path:filename>", methods=["GET"])
-def frontend_static(filename):
-    """Serve any additional static assets from the frontend directory."""
-    return send_from_directory(FRONTEND_DIR, filename)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# API Routes
-# ─────────────────────────────────────────────────────────────────────────────
-
-@app.route("/api/status", methods=["GET"])
-def status():
-    """Frontend polls this to know when the model is ready."""
+@app.route("/api/health", methods=["GET"])
+def health():
+    """Health check."""
     return jsonify({
-        "ready":      MODEL_STATE["ready"],
-        "error":      MODEL_STATE["error"],
-        "model":      MODEL_STATE["best_name"],
-        "accuracy":   MODEL_STATE["best_acc"],
-        "classes":    MODEL_STATE["classes"],
+        "status": "ok",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "service": "Crime & Threat Detection API",
+        "version": "1.0.0",
+    })
+
+
+@app.route("/api/stats", methods=["GET"])
+def stats():
+    """Return model metadata and label definitions."""
+    meta = get_model_stats()
+    return jsonify({
+        "model": meta,
+        "labels": LABELS,
+        "data_info": {
+            "dataset": "Jigsaw Toxic Comment Classification",
+            "source":  "Kaggle / Jigsaw",
+            "classes": len(LABELS),
+            "task":    "Multi-label text classification",
+        },
     })
 
 
 @app.route("/api/analyze", methods=["POST"])
 def analyze():
     """
-    Analyze a piece of text for crime/threat signals.
+    Analyze text for crime/threat indicators.
 
-    Request body: { "text": "<user text>" }
-    Response:     { "label", "display_title", "risk_level", "category",
-                    "confidence", "model_used", "preprocessed_text" }
+    Request body:
+        { "text": "<input text>" }
+
+    Response:
+        {
+            "text": str,
+            "is_harmful": bool,
+            "overall_confidence": float,
+            "labels": [...],
+            "summary": str,
+            "flagged_count": int,
+            "processing_time_ms": float
+        }
     """
-    if not MODEL_STATE["ready"]:
-        err = MODEL_STATE.get("error")
-        return jsonify({
-            "error": err or "Model is still initializing. Please wait and retry."
-        }), 503
-
-    data = request.get_json(silent=True)
+    data = request.get_json(force=True, silent=True)
     if not data or "text" not in data:
-        return jsonify({"error": "Request must include a 'text' field."}), 400
+        return jsonify({"error": "Missing 'text' field in request body."}), 400
 
-    raw_text = str(data["text"]).strip()
-    if not raw_text:
+    text = str(data["text"]).strip()
+    if not text:
         return jsonify({"error": "Text cannot be empty."}), 400
+    if len(text) > 10000:
+        return jsonify({"error": "Text too long. Maximum 10,000 characters."}), 400
 
-    model = MODEL_STATE["model"]
-    le    = MODEL_STATE["label_encoder"]
-
-    # Preprocess
-    cleaned = preprocess_text(raw_text)
-
-    # Predict
-    pred_idx  = model.predict([cleaned])[0]
-    pred_label = le.inverse_transform([pred_idx])[0]
-
-    # Confidence (probability) — LinearSVC uses decision function
-    confidence = None
+    t0 = time.perf_counter()
     try:
-        proba     = model.predict_proba([cleaned])[0]
-        confidence = float(max(proba))
-    except AttributeError:
+        result = predict(text)
+    except Exception as exc:
+        logger.exception("Prediction failed")
+        return jsonify({"error": f"Prediction error: {str(exc)}"}), 500
+    elapsed_ms = round((time.perf_counter() - t0) * 1000, 2)
+
+    result["text"]               = text
+    result["processing_time_ms"] = elapsed_ms
+    logger.info("Analyzed %d chars → harmful=%s (%.1f ms)", len(text), result["is_harmful"], elapsed_ms)
+    return jsonify(result)
+
+
+@app.route("/api/batch", methods=["POST"])
+def batch_analyze():
+    """
+    Analyze multiple texts in one request.
+
+    Request body:
+        { "texts": ["text1", "text2", ...] }
+
+    Maximum 50 texts per request.
+    """
+    data = request.get_json(force=True, silent=True)
+    if not data or "texts" not in data:
+        return jsonify({"error": "Missing 'texts' field in request body."}), 400
+
+    texts = data["texts"]
+    if not isinstance(texts, list) or len(texts) == 0:
+        return jsonify({"error": "'texts' must be a non-empty list."}), 400
+    if len(texts) > 50:
+        return jsonify({"error": "Maximum 50 texts per batch request."}), 400
+
+    results = []
+    for text in texts:
+        text = str(text).strip()
+        if not text:
+            results.append({"error": "Empty text skipped."})
+            continue
         try:
-            dec    = model.decision_function([cleaned])[0]
-            # Normalise with a sigmoid-like approach for multi-class
-            if hasattr(dec, "__len__"):
-                exp_dec = [pow(2.718281828, d) for d in dec]
-                s       = sum(exp_dec)
-                confidence = float(max(exp_dec) / s)
-            else:
-                # Binary SVM: scale decision value to [0,1]
-                confidence = float(1 / (1 + pow(2.718281828, -abs(dec))))
-        except Exception:
-            confidence = None
+            result = predict(text)
+            result["text"] = text
+            results.append(result)
+        except Exception as exc:
+            results.append({"text": text, "error": str(exc)})
 
-    display_title, risk_level, category = label_to_ui(str(pred_label))
-
+    harmful_count = sum(1 for r in results if r.get("is_harmful", False))
     return jsonify({
-        "label":             str(pred_label),
-        "display_title":     display_title,
-        "risk_level":        risk_level,
-        "category":          category,          # "threat" | "abuse" | "safe"
-        "confidence":        round(confidence * 100, 1) if confidence else None,
-        "model_used":        MODEL_STATE["best_name"],
-        "preprocessed_text": cleaned,
+        "total":         len(results),
+        "harmful_count": harmful_count,
+        "clean_count":   len(results) - harmful_count,
+        "results":       results,
     })
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 # Entry point
-# ─────────────────────────────────────────────────────────────────────────────
-
+# ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    print("[SENTINEL] Starting background model training…")
-    threading.Thread(target=load_or_train, daemon=True).start()
-    print("[SENTINEL] API running at http://localhost:5000")
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
