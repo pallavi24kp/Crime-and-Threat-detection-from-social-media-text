@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SENTINEL - Crime &amp; Threat Detection</title>
+<meta name="description" content="SENTINEL: AI-powered NLP crime and threat detection system for analyzing social media text and communication logs."/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                "colors": {
+                    "surface-container": "#171f33",
+                    "tertiary-container": "#003220",
+                    "inverse-on-surface": "#283044",
+                    "primary-fixed": "#d8e3fb",
+                    "tertiary-fixed": "#6ffbbe",
+                    "background": "#0b1326",
+                    "on-secondary-fixed": "#0b1c30",
+                    "secondary-fixed": "#d3e4fe",
+                    "on-secondary": "#213145",
+                    "secondary-fixed-dim": "#b7c8e1",
+                    "on-error": "#690005",
+                    "tertiary-fixed-dim": "#4edea3",
+                    "surface-container-high": "#222a3d",
+                    "secondary": "#b7c8e1",
+                    "surface-bright": "#31394d",
+                    "primary": "#bcc7de",
+                    "on-primary-container": "#8893a9",
+                    "on-background": "#dae2fd",
+                    "on-secondary-fixed-variant": "#38485d",
+                    "on-error-container": "#ffdad6",
+                    "on-secondary-container": "#a9bad3",
+                    "surface-container-low": "#131b2e",
+                    "secondary-container": "#3a4a5f",
+                    "surface-dim": "#0b1326",
+                    "on-tertiary-fixed": "#002113",
+                    "on-tertiary-fixed-variant": "#005236",
+                    "surface-variant": "#2d3449",
+                    "primary-container": "#202b3e",
+                    "surface-tint": "#bcc7de",
+                    "tertiary": "#4edea3",
+                    "surface-container-highest": "#2d3449",
+                    "on-surface-variant": "#c5c6ce",
+                    "inverse-surface": "#dae2fd",
+                    "on-primary-fixed": "#111c2d",
+                    "on-primary": "#263143",
+                    "on-tertiary-container": "#00a673",
+                    "primary-fixed-dim": "#bcc7de",
+                    "error-container": "#93000a",
+                    "error": "#ffb4ab",
+                    "surface-container-lowest": "#060e20",
+                    "on-surface": "#dae2fd",
+                    "inverse-primary": "#545f73",
+                    "outline-variant": "#44474d",
+                    "outline": "#8f9098",
+                    "surface": "#0b1326",
+                    "on-primary-fixed-variant": "#3c475a",
+                    "on-tertiary": "#003824"
+                },
+                "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+                },
+                "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+                }
+            },
+        },
+    }
+</script>
+<style>
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #0b1326;
+        min-height: max(884px, 100dvh);
+    }
+    .headline-font { font-family: 'Manrope', sans-serif; }
+
+    /* Pulse animation for model-loading banner */
+    @keyframes pulse-slow {
+        0%, 100% { opacity: 1; }
+        50%       { opacity: 0.5; }
+    }
+    .pulse-slow { animation: pulse-slow 2s ease-in-out infinite; }
+
+    /* Skeleton shimmer */
+    @keyframes shimmer {
+        0%   { background-position: -1000px 0; }
+        100% { background-position:  1000px 0; }
+    }
+    .skeleton {
+        background: linear-gradient(90deg, #171f33 25%, #222a3d 50%, #171f33 75%);
+        background-size: 1000px 100%;
+        animation: shimmer 1.6s infinite linear;
+        border-radius: 0.5rem;
+    }
+
+    /* Slide-in for result card */
+    @keyframes slide-in {
+        from { opacity: 0; transform: translateY(18px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .slide-in { animation: slide-in 0.45s cubic-bezier(0.22,1,0.36,1) both; }
+
+    /* Confidence bar fill */
+    @keyframes bar-grow {
+        from { width: 0; }
+    }
+    .bar-grow { animation: bar-grow 0.8s cubic-bezier(0.22,1,0.36,1) both; }
+
+    /* Network node pulse dots */
+    @keyframes node-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(78,222,163,0.6); }
+        50%       { box-shadow: 0 0 0 8px rgba(78,222,163,0); }
+    }
+    .node-dot { animation: node-pulse 2s ease-in-out infinite; }
+</style>
+</head>
+
+<body class="bg-background text-on-surface flex flex-col">
+
+<!-- ═══════════════════════ TOP APP BAR ═══════════════════════ -->
+<header class="bg-[#0b1326]/80 backdrop-blur-lg sticky top-0 z-50 w-full h-20 flex justify-between items-center px-6 md:px-8 max-w-screen-2xl mx-auto">
+    <div class="flex items-center gap-3">
+        <span class="material-symbols-outlined text-slate-300 text-2xl" style="font-variation-settings:'FILL' 1;">shield_lock</span>
+        <h1 class="text-xl font-black text-slate-100 tracking-tighter uppercase headline-font">SENTINEL</h1>
+        <span id="model-badge" class="hidden ml-3 text-[10px] font-bold uppercase tracking-widest text-tertiary bg-tertiary/10 px-2.5 py-1 rounded-full headline-font"></span>
+    </div>
+    <div class="flex items-center gap-4">
+        <!-- Status indicator -->
+        <div id="status-dot" class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-outline pulse-slow"></div>
+            <span class="text-xs text-outline hidden sm:block">Initializing</span>
+        </div>
+        <button class="p-2 hover:bg-slate-800/50 rounded-lg transition-all duration-300 active:scale-95">
+            <span class="material-symbols-outlined text-slate-300">account_circle</span>
+        </button>
+    </div>
+</header>
+
+<!-- ═══════════════════════ LOADING BANNER ═══════════════════════ -->
+<div id="loading-banner" class="w-full bg-primary-container/60 backdrop-blur-md border-b border-primary/10 py-3 px-6 flex items-center justify-center gap-3">
+    <span class="material-symbols-outlined text-primary text-sm pulse-slow">smart_toy</span>
+    <p class="text-xs text-primary font-medium headline-font tracking-wide">
+        Intelligence model initializing — training on dataset. This takes 30–90 seconds…
+    </p>
+</div>
+
+<!-- ═══════════════════════ MAIN CONTENT ═══════════════════════ -->
+<main class="flex-grow w-full max-w-3xl mx-auto px-6 py-10 flex flex-col gap-12">
+
+    <!-- ── Input Section ─────────────────────────────────────────── -->
+    <section class="flex flex-col gap-6">
+        <div class="space-y-2">
+            <h2 class="headline-font text-3xl font-extrabold tracking-tight text-on-surface">Digital Intelligence Brief</h2>
+            <p class="text-on-surface-variant font-light leading-relaxed">Initiate deep-layer analysis on suspect reports or communication logs.</p>
+        </div>
+
+        <div class="relative group">
+            <textarea
+                id="input-text"
+                class="w-full h-48 p-6 bg-surface-container-highest border-none focus:ring-0 focus:outline-none text-on-surface placeholder:text-outline/50 rounded-xl transition-all font-body text-lg resize-none"
+                placeholder="Enter text or paste a report for analysis…"
+            ></textarea>
+            <div class="absolute bottom-0 left-0 w-full h-[2px] bg-surface-container-highest rounded-b-xl">
+                <div class="h-full bg-primary w-0 group-focus-within:w-full transition-all duration-500 rounded-b-xl"></div>
+            </div>
+        </div>
+
+        <!-- Error message -->
+        <p id="input-error" class="hidden text-sm text-error flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-base">error</span>
+            <span id="input-error-text">Please enter text to analyze.</span>
+        </p>
+
+        <button
+            id="analyze-btn"
+            onclick="analyzeText()"
+            class="w-full py-4 px-8 rounded-full bg-gradient-to-br from-primary to-primary-container text-on-primary font-headline font-bold text-lg tracking-wide shadow-lg active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:from-primary-fixed hover:to-primary-container"
+        >
+            <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">analytics</span>
+            <span id="btn-label">ANALYZE REPORT</span>
+        </button>
+    </section>
+
+    <!-- ── Results Section ───────────────────────────────────────── -->
+    <section id="results-section" class="flex flex-col gap-8">
+
+        <!-- Skeleton (shown while loading) -->
+        <div id="skeleton-loader" class="hidden flex flex-col gap-6">
+            <div class="flex items-center justify-between border-b border-outline-variant/10 pb-4">
+                <div class="skeleton h-3 w-32 rounded"></div>
+                <div class="skeleton h-3 w-20 rounded"></div>
+            </div>
+            <div class="skeleton h-44 w-full rounded-xl"></div>
+        </div>
+
+        <!-- Results header (shown after first result) -->
+        <div id="results-header" class="hidden flex items-center justify-between border-b border-outline-variant/10 pb-4">
+            <h3 class="headline-font text-sm font-bold uppercase tracking-widest text-on-secondary-container">Analysis Findings</h3>
+            <span id="result-meta" class="text-xs text-outline font-medium"></span>
+        </div>
+
+        <!-- Dynamic result card injected here -->
+        <div id="result-cards" class="space-y-6"></div>
+
+        <!-- Empty / placeholder state -->
+        <div id="empty-state" class="flex flex-col items-center gap-4 py-12 text-center">
+            <div class="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center">
+                <span class="material-symbols-outlined text-outline text-3xl">radar</span>
+            </div>
+            <p class="text-on-surface-variant text-sm font-light max-w-xs leading-relaxed">
+                Enter a text sample above and click <strong class="text-primary font-medium">Analyze Report</strong> to begin intelligence analysis.
+            </p>
+        </div>
+    </section>
+
+    <!-- ── Visual Context Card ───────────────────────────────────── -->
+    <section class="w-full">
+        <div class="relative h-64 w-full rounded-2xl overflow-hidden bg-surface-container shadow-2xl">
+            <img
+                alt="Global security node map"
+                class="w-full h-full object-cover opacity-40 mix-blend-screen"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2sN4UnEmaTaCItLFEvN91Q8s_NNFxX68yiNqoX3y4QCJMslnog2xCoQO0sVq7i2bzIxrPfezCFcmy-A_zo18cMOFAelLLopPSR_iiw9t2Bn2W_R7eNJeC4P3CNzFcZIR4R8mS7GIKRk-B8mrR990Lwyk-fi0whyMFGl12mgxY62sKiPdi_VfgaIY8Cp00CKIUl2eju5pNWEDSRhYcbjIvt5tWiBaemVWemKWBjU2FA-GdKjMGfDYSvVrxamEJC-qkjuGKj15V-A4"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
+            <div class="absolute bottom-6 left-6">
+                <h5 class="headline-font text-xl font-bold text-slate-100">Regional Sentinel Feed</h5>
+                <p class="text-sm text-slate-400 flex items-center gap-2 mt-1">
+                    <span class="w-2 h-2 rounded-full bg-tertiary node-dot inline-block"></span>
+                    Live monitoring active across 14 nodes.
+                </p>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- ═══════════════════════ FOOTER ═══════════════════════ -->
+<footer class="w-full py-12 px-8 flex flex-col md:flex-row justify-between items-center gap-6 border-t border-white/5 bg-[#0b1326]">
+    <div class="flex flex-col gap-2 items-center md:items-start text-center md:text-left">
+        <p class="font-['Inter'] text-[10px] font-light uppercase tracking-[0.2em] text-slate-500">
+            © 2024 Sentinel Intelligence Systems. Authorized personnel only.
+        </p>
+        <p class="font-['Inter'] text-[10px] font-light uppercase tracking-[0.2em] text-error/60">
+            Classification: Level 5 TOP SECRET
+        </p>
+    </div>
+    <nav class="flex gap-8">
+        <a class="font-['Inter'] text-xs font-light uppercase tracking-widest text-slate-500 hover:text-slate-300 transition-colors" href="#">Secure Protocol</a>
+        <a class="font-['Inter'] text-xs font-light uppercase tracking-widest text-slate-500 hover:text-slate-300 transition-colors" href="#">Terms of Engagement</a>
+        <a class="font-['Inter'] text-xs font-light uppercase tracking-widest text-slate-500 hover:text-slate-300 transition-colors" href="#">Support Node</a>
+    </nav>
+</footer>
+
+<!-- ═══════════════════════ MOBILE FAB ═══════════════════════ -->
+<div class="fixed bottom-6 right-6 z-40 md:hidden">
+    <button onclick="analyzeText()" class="h-14 w-14 rounded-full bg-primary-container text-primary flex items-center justify-center shadow-2xl border border-primary/20 backdrop-blur-md active:scale-90 transition-transform">
+        <span class="material-symbols-outlined">analytics</span>
+    </button>
+</div>
+
+<!-- ═══════════════════════ JAVASCRIPT ═══════════════════════ -->
+<script>
+    // ── Config ────────────────────────────────────────────────────────────────
+    const API_BASE = "http://localhost:5000";
+    const POLL_INTERVAL_MS = 3000;
+
+    // ── State ─────────────────────────────────────────────────────────────────
+    let modelReady  = false;
+    let pollTimer   = null;
+
+    // ── DOM refs ──────────────────────────────────────────────────────────────
+    const loadingBanner   = document.getElementById("loading-banner");
+    const statusDot       = document.getElementById("status-dot");
+    const modelBadge      = document.getElementById("model-badge");
+    const analyzeBtn      = document.getElementById("analyze-btn");
+    const btnLabel        = document.getElementById("btn-label");
+    const inputText       = document.getElementById("input-text");
+    const inputError      = document.getElementById("input-error");
+    const inputErrorText  = document.getElementById("input-error-text");
+    const skeletonLoader  = document.getElementById("skeleton-loader");
+    const resultsHeader   = document.getElementById("results-header");
+    const resultMeta      = document.getElementById("result-meta");
+    const resultCards     = document.getElementById("result-cards");
+    const emptyState      = document.getElementById("empty-state");
+
+    // ── Status polling ────────────────────────────────────────────────────────
+    async function pollStatus() {
+        try {
+            const res  = await fetch(`${API_BASE}/api/status`, { signal: AbortSignal.timeout(4000) });
+            const data = await res.json();
+
+            if (data.ready) {
+                setModelReady(data.model, data.accuracy);
+            } else if (data.error) {
+                setModelError(data.error);
+            }
+            // else: still training — keep polling
+        } catch (err) {
+            // Server not up yet — keep polling silently
+            setStatusDot("waiting");
+        }
+    }
+
+    function startPolling() {
+        pollStatus();
+        pollTimer = setInterval(pollStatus, POLL_INTERVAL_MS);
+    }
+
+    function stopPolling() {
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    }
+
+    function setModelReady(modelName, accuracy) {
+        stopPolling();
+        modelReady = true;
+
+        // Hide banner
+        loadingBanner.style.transition = "opacity 0.5s";
+        loadingBanner.style.opacity = "0";
+        setTimeout(() => loadingBanner.classList.add("hidden"), 500);
+
+        // Update status dot → green
+        setStatusDot("ready");
+
+        // Show model badge in header
+        modelBadge.textContent = modelName || "AI Model";
+        modelBadge.classList.remove("hidden");
+
+        // Enable button
+        analyzeBtn.disabled = false;
+    }
+
+    function setModelError(errMsg) {
+        stopPolling();
+        setStatusDot("error");
+        loadingBanner.innerHTML = `
+            <span class="material-symbols-outlined text-error text-sm">error</span>
+            <p class="text-xs text-error font-medium headline-font tracking-wide">
+                Model failed to initialize: ${escapeHtml(errMsg)}
+            </p>
+        `;
+        loadingBanner.classList.remove("bg-primary-container/60");
+        loadingBanner.classList.add("bg-error-container/60");
+    }
+
+    function setStatusDot(state) {
+        const dotContainer = statusDot;
+        const dot   = dotContainer.querySelector("div");
+        const label = dotContainer.querySelector("span");
+
+        dot.classList.remove("pulse-slow");
+
+        const states = {
+            waiting: { color: "bg-outline",   text: "Connecting",   pulse: true  },
+            ready:   { color: "bg-tertiary",   text: "Online",       pulse: false },
+            busy:    { color: "bg-primary",    text: "Analyzing",    pulse: true  },
+            error:   { color: "bg-error",      text: "Error",        pulse: false },
+        };
+        const s = states[state] || states.waiting;
+
+        dot.className = `w-2 h-2 rounded-full ${s.color}`;
+        label.textContent = s.text;
+        if (s.pulse) dot.classList.add("pulse-slow");
+    }
+
+    // ── Analysis ──────────────────────────────────────────────────────────────
+    async function analyzeText() {
+        const text = inputText.value.trim();
+
+        // Validation
+        hideError();
+        if (!text) {
+            showError("Please enter some text to analyze.");
+            return;
+        }
+        if (!modelReady) {
+            showError("The intelligence model is still initializing. Please wait.");
+            return;
+        }
+
+        // UI: loading state
+        setStatusDot("busy");
+        analyzeBtn.disabled = true;
+        btnLabel.textContent = "ANALYZING…";
+        emptyState.classList.add("hidden");
+        resultsHeader.classList.add("hidden");
+        resultCards.innerHTML = "";
+        skeletonLoader.classList.remove("hidden");
+
+        try {
+            const res  = await fetch(`${API_BASE}/api/analyze`, {
+                method:  "POST",
+                headers: { "Content-Type": "application/json" },
+                body:    JSON.stringify({ text }),
+                signal:  AbortSignal.timeout(30000),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok || data.error) {
+                throw new Error(data.error || `Server error ${res.status}`);
+            }
+
+            renderResult(data);
+        } catch (err) {
+            skeletonLoader.classList.add("hidden");
+            emptyState.classList.remove("hidden");
+            showError(
+                err.name === "TimeoutError"
+                    ? "Request timed out. Is the Flask server running on port 5000?"
+                    : `Analysis error: ${err.message}`
+            );
+        } finally {
+            analyzeBtn.disabled = false;
+            btnLabel.textContent = "ANALYZE REPORT";
+            setStatusDot("ready");
+        }
+    }
+
+    // ── Render result card ────────────────────────────────────────────────────
+    function renderResult(data) {
+        skeletonLoader.classList.add("hidden");
+
+        // Header
+        resultsHeader.classList.remove("hidden");
+        const ts = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        resultMeta.textContent = `${data.model_used || "AI Model"} · ${ts}`;
+
+        // Category → colors & icon
+        const categoryMap = {
+            threat: {
+                bg:        "bg-error-container",
+                border:    "border-error",
+                titleColor:"text-on-error-container",
+                textColor: "text-on-error-container/80",
+                badgeBg:   "bg-error/20",
+                badgeText: "text-on-error-container",
+                icon:      "warning",
+                iconStyle: "font-variation-settings:'FILL' 1;",
+            },
+            abuse: {
+                bg:        "bg-tertiary-container",
+                border:    "border-tertiary",
+                titleColor:"text-on-tertiary-container",
+                textColor: "text-on-tertiary-container/80",
+                badgeBg:   "bg-tertiary/20",
+                badgeText: "text-on-tertiary-container",
+                icon:      "error_outline",
+                iconStyle: "",
+            },
+            safe: {
+                bg:        "bg-secondary-container",
+                border:    "border-secondary",
+                titleColor:"text-on-secondary-container",
+                textColor: "text-on-secondary-container/80",
+                badgeBg:   "bg-secondary/20",
+                badgeText: "text-on-secondary-container",
+                icon:      "check_circle",
+                iconStyle: "font-variation-settings:'FILL' 1;",
+            },
+        };
+
+        const cat   = categoryMap[data.category] || categoryMap.safe;
+        const conf  = data.confidence != null ? `${data.confidence}%` : "—";
+        const label = escapeHtml(data.label || "Unknown");
+        const title = escapeHtml(data.display_title || "Analysis Result");
+        const risk  = escapeHtml(data.risk_level || "Unknown");
+
+        // Confidence bar color
+        const barColor = data.category === "threat" ? "bg-error"
+                       : data.category === "abuse"  ? "bg-tertiary"
+                       : "bg-secondary";
+
+        const confVal = data.confidence != null ? data.confidence : 0;
+
+        resultCards.innerHTML = `
+            <div class="slide-in p-6 rounded-xl ${cat.bg} border-l-4 ${cat.border} flex flex-col gap-4 relative overflow-hidden">
+
+                <!-- Header row -->
+                <div class="flex justify-between items-start gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined ${cat.titleColor}" style="${cat.iconStyle}">${cat.icon}</span>
+                        <span class="text-xs font-bold headline-font uppercase tracking-tighter ${cat.titleColor}">${risk} Risk</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="px-2.5 py-1 ${cat.badgeBg} rounded-md">
+                            <span class="text-[10px] font-bold ${cat.badgeText} headline-font uppercase">${risk}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Title -->
+                <h4 class="${cat.titleColor} text-xl font-bold headline-font">${title}</h4>
+
+                <!-- Raw label -->
+                <p class="${cat.textColor} text-sm leading-relaxed">
+                    Classification label: <span class="font-mono font-semibold ${cat.titleColor}">${label}</span>
+                </p>
+
+                <!-- Confidence bar -->
+                ${data.confidence != null ? `
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-bold uppercase tracking-widest ${cat.textColor} headline-font">Confidence</span>
+                        <span class="text-xs font-bold ${cat.titleColor} headline-font">${conf}</span>
+                    </div>
+                    <div class="w-full h-1.5 rounded-full bg-black/20">
+                        <div class="bar-grow h-full rounded-full ${barColor}" style="width:${confVal}%"></div>
+                    </div>
+                </div>
+                ` : ""}
+
+                <!-- Chips row -->
+                <div class="flex flex-wrap gap-2 mt-1">
+                    <span class="${cat.badgeBg} px-3 py-1 rounded-full text-[10px] font-bold ${cat.badgeText} headline-font uppercase">
+                        ${escapeHtml(data.model_used || "AI")}
+                    </span>
+                    <span class="${cat.badgeBg} px-3 py-1 rounded-full text-[10px] font-bold ${cat.badgeText} headline-font uppercase">
+                        NLP ANALYSIS
+                    </span>
+                    <span class="${cat.badgeBg} px-3 py-1 rounded-full text-[10px] font-bold ${cat.badgeText} headline-font uppercase">
+                        ${new Date().toLocaleDateString()}
+                    </span>
+                </div>
+
+                <!-- Subtle glow overlay -->
+                <div class="pointer-events-none absolute inset-0 rounded-xl opacity-5"
+                     style="background: radial-gradient(ellipse at top left, white, transparent 70%)"></div>
+            </div>
+
+            <!-- Preprocessed excerpt -->
+            <div class="p-4 rounded-xl bg-surface-container-high flex flex-col gap-2">
+                <span class="text-[10px] font-bold uppercase tracking-widest text-outline headline-font">Preprocessed Input</span>
+                <p class="text-on-surface-variant text-sm font-mono leading-relaxed break-all">${escapeHtml(data.preprocessed_text || "")}</p>
+            </div>
+        `;
+    }
+
+    // ── Utilities ─────────────────────────────────────────────────────────────
+    function showError(msg) {
+        inputErrorText.textContent = msg;
+        inputError.classList.remove("hidden");
+    }
+    function hideError() {
+        inputError.classList.add("hidden");
+    }
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+
+    // ── Allow Enter key to submit (Shift+Enter for newline) ───────────────────
+    inputText.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            analyzeText();
+        }
+    });
+
+    // ── Boot ──────────────────────────────────────────────────────────────────
+    analyzeBtn.disabled = true; // disabled until model is ready
+    startPolling();
+</script>
+</body>
+</html>
