@@ -6,7 +6,7 @@ from transformers import BertTokenizer, BertForSequenceClassification, Trainer, 
 from datasets import Dataset
 
 # 1. Load dataset
-df = pd.read_csv("train.csv")  # change path if needed
+df = pd.read_csv("train.csv")  
 
 # Example: For Jigsaw dataset (toxic classification)
 # Combine labels into one (binary classification)
